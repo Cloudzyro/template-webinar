@@ -1,0 +1,619 @@
+---
+import Base from "../layouts/Base.astro";
+import Broadcast from "../components/Broadcast.astro";
+import Portrait from "../components/Portrait.astro";
+import { agenda, faq, form, learn, replays, speakers, webinar } from "../data/webinar";
+import { end, googleCalendarUrl, hostDate, hostTime, start, timecode } from "../lib/time";
+
+const endpoint = (import.meta.env.PUBLIC_FORM_ENDPOINT ?? "").trim();
+const mailto = `mailto:${webinar.contactEmail}`;
+const gcal = googleCalendarUrl();
+const replayAsk = (title: string) =>
+  `${mailto}?subject=${encodeURIComponent(`Replay: ${title}`)}&body=${encodeURIComponent("Please send me the replay link.")}`;
+---
+
+<Base>
+  <section class="hero" data-times data-start={start.toISOString()} data-end={end.toISOString()}>
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <p class="status mono" data-status>
+          <span class="tally is-off" data-tally></span>
+          <span data-status-text>Free live webinar, {webinar.durationMinutes} minutes</span>
+        </p>
+        <h1>{webinar.title}</h1>
+        <p class="lede">{webinar.subtitle}</p>
+        <div class="when">
+          <div>
+            <p class="when-date" data-local-date>{hostDate}</p>
+            <p class="when-time"><span data-local-time>{hostTime}</span> <span class="mono" data-local-zone></span></p>
+          </div>
+          <p class="mono when-host" data-host-note hidden>That's {hostTime} for the hosts</p>
+        </div>
+        <div class="actions">
+          <a class="btn btn-primary" href="#register" data-register-label>Save my seat</a>
+          <a class="btn btn-secondary" href="/webinar.ics" download>Add to calendar</a>
+        </div>
+      </div>
+      <Broadcast />
+    </div>
+  </section>
+
+  <section id="learn" class="section" aria-labelledby="learn-title">
+    <div class="wrap">
+      <div class="section-head">
+        <h2 id="learn-title">What you'll learn</h2>
+        <p>Practical steps with a real set of books on screen. You'll leave with the checklist and the report template.</p>
+      </div>
+      <ol class="learn">
+        {
+          learn.map((l, i) => (
+            <li>
+              <span class="mono learn-n">{String(i + 1).padStart(2, "0")}</span>
+              <h3>{l.title}</h3>
+              <p>{l.text}</p>
+            </li>
+          ))
+        }
+      </ol>
+    </div>
+  </section>
+
+  <section id="agenda" class="section agenda-sec" aria-labelledby="agenda-title">
+    <div class="wrap agenda-grid">
+      <div class="section-head">
+        <h2 id="agenda-title">Running order</h2>
+        <p>Times count from the start of the session. The last twelve minutes are for your questions.</p>
+      </div>
+      <ol class="agenda">
+        {
+          agenda.map((a, i) => (
+            <li>
+              <span class="mono tc">{timecode(a.at)}</span>
+              <div>
+                <p class="ag-title">{a.title}</p>
+                <p class="ag-who">{a.who}</p>
+              </div>
+              <span class="mono ag-len">{(agenda[i + 1]?.at ?? webinar.durationMinutes) - a.at} min</span>
+            </li>
+          ))
+        }
+      </ol>
+    </div>
+  </section>
+
+  <section id="speakers" class="section" aria-labelledby="speakers-title">
+    <div class="wrap">
+      <div class="section-head">
+        <h2 id="speakers-title">Who's speaking</h2>
+      </div>
+      <ul class="speakers">
+        {
+          speakers.map((s) => (
+            <li>
+              <div class="portrait">
+                <Portrait tone={s.tone} />
+              </div>
+              <div>
+                <h3>{s.name}</h3>
+                <p class="mono">{s.role}</p>
+                <p class="bio">{s.bio}</p>
+              </div>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <section id="register" class="section register" aria-labelledby="register-title">
+    <div class="wrap reg-grid">
+      <div class="section-head">
+        <h2 id="register-title">{form.title}</h2>
+        <p>{form.text}</p>
+        <dl class="reg-facts">
+          <div>
+            <dt class="mono">When</dt>
+            <dd><span data-local-date>{hostDate}</span>, <span data-local-time>{hostTime}</span></dd>
+          </div>
+          <div>
+            <dt class="mono">Where</dt>
+            <dd>{webinar.platform}</dd>
+          </div>
+          <div>
+            <dt class="mono">Seats</dt>
+            <dd>{webinar.seatsNote}</dd>
+          </div>
+        </dl>
+      </div>
+      <form
+        class="form"
+        action={endpoint || mailto}
+        method="post"
+        enctype={endpoint ? undefined : "text/plain"}
+        data-endpoint={endpoint}
+        data-mailto={webinar.contactEmail}
+      >
+        <div class="row">
+          <label>
+            <span>Name</span>
+            <input name="name" autocomplete="name" required />
+          </label>
+          <label>
+            <span>Work email</span>
+            <input name="email" type="email" autocomplete="email" required />
+          </label>
+        </div>
+        <div class="row">
+          <label>
+            <span>Company</span>
+            <input name="company" autocomplete="organization" />
+          </label>
+          <label>
+            <span>Your role</span>
+            <select name="role">{form.roles.map((r) => <option>{r}</option>)}</select>
+          </label>
+        </div>
+        <label>
+          <span>A question for the speakers <span class="opt">(optional)</span></span>
+          <textarea name="question" rows="3"></textarea>
+        </label>
+        <input type="hidden" name="webinar" value={`${webinar.title}, ${webinar.startsAt}`} />
+        <div class="visually-hidden" aria-hidden="true">
+          <label>Leave this empty <input type="text" name="_gotcha" tabindex="-1" autocomplete="off" /></label>
+        </div>
+        {!endpoint && <p class="note">Registration isn't connected yet, so sending this opens your email app with your details filled in.</p>}
+        <button class="btn btn-primary" type="submit">Register free</button>
+        <div class="done" hidden>
+          <p><strong>You're registered.</strong> The join link is on its way to your inbox.</p>
+          <p class="done-links">
+            <a href="/webinar.ics" download>Download the invite</a>
+            <a href={gcal} rel="noopener">Add to Google Calendar</a>
+          </p>
+        </div>
+        <p class="status-line" role="status" aria-live="polite"></p>
+      </form>
+    </div>
+  </section>
+
+  <section id="replay" class="section" aria-labelledby="replay-title">
+    <div class="wrap">
+      <div class="section-head">
+        <h2 id="replay-title">Replays</h2>
+        <p>
+          {
+            webinar.replayUrl
+              ? "Missed it live? The full session is below, with the slides linked underneath."
+              : "The replay of this session goes to everyone who registers, the day after. Earlier sessions in the series:"
+          }
+        </p>
+      </div>
+      {
+        webinar.replayUrl && (
+          <div class="player" data-embed={webinar.replayUrl}>
+            <button class="btn btn-secondary" type="button">Play the replay</button>
+            <p class="mono">Loads the video player from your video host</p>
+          </div>
+        )
+      }
+      <ul class="replays">
+        {
+          replays.map((r) => (
+            <li>
+              <p class="rp-title">{r.title}</p>
+              <p class="mono">
+                {r.date}, {r.length}
+              </p>
+              <a href={replayAsk(r.title)}>Ask for the link</a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="faq-title">
+    <div class="wrap faq-grid">
+      <h2 id="faq-title">Questions</h2>
+      <div class="faq">
+        {
+          faq.map((f) => (
+            <details>
+              <summary>{f.q}</summary>
+              <p>{f.a}</p>
+            </details>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+</Base>
+
+<script>
+  // Show the time in the visitor's own time zone, and switch the page when the session is live or over.
+  const hero = document.querySelector<HTMLElement>("[data-times]")!;
+  const start = new Date(hero.dataset.start!);
+  const end = new Date(hero.dataset.end!);
+  const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const date = start.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+  const time = start.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZoneName: "short" });
+  document.querySelectorAll("[data-local-date]").forEach((el) => (el.textContent = date));
+  document.querySelectorAll("[data-local-time]").forEach((el) => (el.textContent = time));
+  const zoneEl = document.querySelector("[data-local-zone]");
+  if (zoneEl) zoneEl.textContent = `your time, ${zone.replace(/_/g, " ")}`;
+  const hostNote = document.querySelector<HTMLElement>("[data-host-note]");
+  if (hostNote) hostNote.hidden = false;
+
+  const status = document.querySelector<HTMLElement>("[data-status-text]")!;
+  const tally = document.querySelector<HTMLElement>("[data-tally]")!;
+  const register = document.querySelector<HTMLAnchorElement>("[data-register-label]")!;
+  const now = Date.now();
+  if (now >= start.getTime() && now < end.getTime()) {
+    status.textContent = "Live now";
+    tally.classList.remove("is-off");
+  } else if (now >= end.getTime()) {
+    status.textContent = "This session has ended";
+    register.textContent = "Get the replay";
+  } else {
+    const days = Math.ceil((start.getTime() - now) / 86_400_000);
+    status.textContent = days <= 1 ? "Starts within a day" : `Starts in ${days} days`;
+  }
+
+  // Registration
+  const form = document.querySelector<HTMLFormElement>("form.form")!;
+  const line = form.querySelector<HTMLElement>(".status-line")!;
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const data = new FormData(form);
+    if (data.get("_gotcha")) return;
+    const endpointUrl = form.dataset.endpoint;
+    if (!endpointUrl) {
+      const subject = encodeURIComponent(`Register me: ${data.get("webinar")}`);
+      const body = encodeURIComponent(
+        `Name: ${data.get("name")}\nEmail: ${data.get("email")}\nCompany: ${data.get("company")}\nRole: ${data.get("role")}\nQuestion: ${data.get("question")}`,
+      );
+      window.location.href = `mailto:${form.dataset.mailto}?subject=${subject}&body=${body}`;
+      return;
+    }
+    const button = form.querySelector<HTMLButtonElement>("button[type=submit]")!;
+    button.disabled = true;
+    line.textContent = "Registering...";
+    try {
+      const res = await fetch(endpointUrl, { method: "POST", body: data, headers: { Accept: "application/json" } });
+      if (!res.ok) throw new Error(String(res.status));
+      form.reset();
+      line.textContent = "";
+      button.hidden = true;
+      form.querySelector<HTMLElement>(".done")!.hidden = false;
+    } catch {
+      line.textContent = `That didn't go through. Please email ${form.dataset.mailto} and we'll register you.`;
+    } finally {
+      button.disabled = false;
+    }
+  });
+
+  // Replay player loads only when asked
+  document.querySelectorAll<HTMLElement>("[data-embed]").forEach((box) => {
+    box.querySelector("button")?.addEventListener("click", () => {
+      const frame = document.createElement("iframe");
+      frame.src = box.dataset.embed!;
+      frame.title = "Webinar replay";
+      frame.allow = "autoplay; fullscreen; picture-in-picture";
+      frame.allowFullscreen = true;
+      box.replaceChildren(frame);
+    });
+  });
+</script>
+
+<style>
+  .hero {
+    padding-block: clamp(3rem, 6vw, 5rem) clamp(4rem, 7vw, 5.5rem);
+  }
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.1fr;
+    gap: clamp(2rem, 5vw, 4rem);
+    align-items: center;
+  }
+  .status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+    color: var(--text-2);
+  }
+  .tally.is-off {
+    background: var(--text-3);
+    opacity: 0.5;
+  }
+  h1 {
+    font-size: clamp(2.5rem, 5.5vw, 4rem);
+    letter-spacing: -0.03em;
+    line-height: 1.04;
+    max-width: 14ch;
+  }
+  .lede {
+    margin-top: 1.25rem;
+    font-size: 1.125rem;
+    color: var(--text-2);
+    max-width: 34rem;
+  }
+  .when {
+    margin-top: 1.75rem;
+    padding: 1rem 0;
+    border-block: 1px solid var(--line-strong);
+    display: grid;
+    gap: 4px;
+  }
+  .when-date {
+    font-size: 1.125rem;
+    font-weight: 500;
+  }
+  .when-time {
+    font-size: 1.125rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1.75rem;
+  }
+
+  .learn {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem 3rem;
+    counter-reset: none;
+  }
+  .learn li {
+    display: grid;
+    grid-template-columns: 2.5rem 1fr;
+    gap: 0.25rem 0.75rem;
+    border-top: 1px solid var(--line-strong);
+    padding-top: 1.25rem;
+  }
+  .learn-n {
+    grid-row: 1 / span 2;
+    color: var(--live-ink);
+    padding-top: 2px;
+  }
+  .learn p {
+    color: var(--text-2);
+  }
+
+  .agenda-sec {
+    background: var(--card);
+  }
+  .agenda-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.6fr;
+    gap: 3rem;
+    align-items: start;
+  }
+  .agenda li {
+    display: grid;
+    grid-template-columns: 4rem 1fr auto;
+    gap: 1rem;
+    align-items: baseline;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .agenda li:first-child {
+    border-top: 1px solid var(--line);
+  }
+  .tc {
+    color: var(--text);
+  }
+  .ag-title {
+    font-weight: 500;
+  }
+  .ag-who {
+    color: var(--text-2);
+    font-size: 0.9375rem;
+  }
+
+  .speakers {
+    display: grid;
+    max-width: 52rem;
+  }
+  .speakers li {
+    display: grid;
+    grid-template-columns: 112px 1fr;
+    gap: 1.5rem;
+    align-items: start;
+    padding: 1.5rem 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .speakers li:first-child {
+    border-top: 1px solid var(--line);
+  }
+  .portrait {
+    aspect-ratio: 1;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .portrait :global(svg) {
+    width: 100%;
+    height: 100%;
+  }
+  .speakers h3 {
+    font-size: 1.25rem;
+    margin-bottom: 2px;
+  }
+  .bio {
+    margin-top: 0.5rem;
+    max-width: 40rem;
+    color: var(--text-2);
+  }
+
+  .register {
+    background: var(--raised);
+  }
+  .reg-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.25fr;
+    gap: 3rem;
+    align-items: start;
+  }
+  .reg-facts {
+    display: grid;
+    gap: 1rem;
+    margin: 1rem 0 0;
+  }
+  .reg-facts dd {
+    margin: 2px 0 0;
+  }
+  .form {
+    display: grid;
+    gap: 1rem;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: clamp(1.25rem, 3vw, 2rem);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
+  }
+  .row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  label {
+    display: grid;
+    gap: 0.375rem;
+    font-size: 0.9375rem;
+    font-weight: 500;
+  }
+  .opt {
+    font-weight: 400;
+    color: var(--text-3);
+  }
+  input,
+  select,
+  textarea {
+    font: inherit;
+    font-weight: 400;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+    min-height: 44px;
+    padding: 0.5rem 0.75rem;
+    width: 100%;
+  }
+  textarea {
+    resize: vertical;
+  }
+  .form .btn {
+    justify-self: start;
+  }
+  .note,
+  .status-line {
+    font-size: 0.875rem;
+    color: var(--text-3);
+  }
+  .status-line:empty {
+    display: none;
+  }
+  .done {
+    display: grid;
+    gap: 0.5rem;
+  }
+  .done[hidden] {
+    display: none;
+  }
+  .done-links {
+    display: flex;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+  }
+
+  .player {
+    aspect-ratio: 16 / 9;
+    background: var(--studio);
+    border-radius: 14px;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+    color: #b9bfcb;
+    overflow: hidden;
+  }
+  .player :global(iframe) {
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+  .replays li {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 1.5rem;
+    align-items: baseline;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .replays li:first-child {
+    border-top: 1px solid var(--line);
+  }
+  .rp-title {
+    font-weight: 500;
+  }
+  .replays a {
+    color: var(--text-2);
+    font-size: 0.9375rem;
+  }
+
+  .faq-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.6fr;
+    gap: 3rem;
+  }
+  .faq details {
+    border-bottom: 1px solid var(--line);
+  }
+  .faq details:first-child {
+    border-top: 1px solid var(--line);
+  }
+  .faq summary {
+    cursor: pointer;
+    padding: 1rem 0;
+    font-weight: 500;
+  }
+  .faq details p {
+    padding-bottom: 1rem;
+    color: var(--text-2);
+  }
+
+  @media (max-width: 900px) {
+    .hero-grid,
+    .agenda-grid,
+    .reg-grid,
+    .faq-grid {
+      grid-template-columns: 1fr;
+    }
+    .agenda-grid,
+    .faq-grid {
+      gap: 0;
+    }
+  }
+  @media (max-width: 640px) {
+    .learn,
+    .row {
+      grid-template-columns: 1fr;
+    }
+    .speakers li {
+      grid-template-columns: 72px 1fr;
+      gap: 1rem;
+    }
+    .agenda li {
+      grid-template-columns: 3.5rem 1fr;
+    }
+    .ag-len {
+      display: none;
+    }
+    .replays li {
+      grid-template-columns: 1fr;
+      gap: 0.25rem;
+    }
+  }
+</style>

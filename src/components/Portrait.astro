@@ -1,0 +1,15 @@
+---
+// An abstract head-and-shoulders placeholder in one tone. Swap for a real photo:
+// put it in public/ and use <img src="/priya.jpg" alt="Priya Raman" /> instead.
+interface Props {
+  tone: string;
+}
+const { tone } = Astro.props;
+---
+
+<svg viewBox="0 0 120 120" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+  <rect width="120" height="120" fill={tone}></rect>
+  <rect width="120" height="120" fill="#15181f" opacity="0.08"></rect>
+  <circle cx="60" cy="50" r="20" fill="#15181f" opacity="0.28"></circle>
+  <path d="M22 120c2-26 18-40 38-40s36 14 38 40z" fill="#15181f" opacity="0.28"></path>
+</svg>

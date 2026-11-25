@@ -1,0 +1,177 @@
+---
+// A still of the broadcast as it will look: the shared slide, two speaker tiles and
+// a lower third. Built in code from the data, so it changes with your content.
+import { speakers, webinar } from "../data/webinar";
+import Portrait from "./Portrait.astro";
+
+const [lead, second] = speakers;
+const rows = [
+  { task: "Bank and card feeds", from: 1, to: 2 },
+  { task: "Payment processor payouts", from: 1, to: 2 },
+  { task: "Bills and expenses", from: 2, to: 3 },
+  { task: "Work in progress", from: 3, to: 4 },
+  { task: "Review and adjust", from: 4, to: 5 },
+  { task: "One-page report", from: 5, to: 6 },
+];
+---
+
+<figure class="broadcast">
+  <div class="screen" aria-hidden="true">
+    <div class="slide">
+      <p class="slide-kicker">{webinar.title}</p>
+      <p class="slide-title">Who does what, day by day</p>
+      <div class="gantt">
+        <span></span>
+        {[1, 2, 3, 4, 5].map((d) => <span class="gd">Day {d}</span>)}
+        {
+          rows.map((r, i) => (
+            <>
+              <span class="gt">{r.task}</span>
+              <span class="bar" class:list={{ key: i === 3 }} style={`grid-column:${r.from + 1} / ${r.to + 1}`} />
+            </>
+          ))
+        }
+      </div>
+    </div>
+    <div class="tiles">
+      <div class="tile"><Portrait tone={lead.tone} /><span class="tile-name">{lead.name}</span></div>
+      <div class="tile"><Portrait tone={second.tone} /><span class="tile-name">{second.name}</span></div>
+    </div>
+    <div class="lower">
+      <span class="lower-name">{lead.name}</span>
+      <span class="lower-role">{lead.role}</span>
+    </div>
+  </div>
+  <figcaption class="mono">A still from the session: the five-day calendar on screen, with {lead.name} presenting</figcaption>
+</figure>
+
+<style>
+  .broadcast {
+    margin: 0;
+    display: grid;
+    gap: 12px;
+  }
+  .screen {
+    position: relative;
+    aspect-ratio: 16 / 10;
+    background: var(--studio);
+    border-radius: 14px;
+    padding: 12px;
+    display: grid;
+    grid-template-columns: 1fr 26%;
+    gap: 12px;
+    box-shadow: 0 24px 48px -20px rgb(17 24 39 / 0.45);
+    overflow: hidden;
+  }
+  .slide {
+    background: #fbfbf8;
+    border-radius: 6px;
+    padding: 6% 6% 0;
+    display: grid;
+    align-content: start;
+    gap: 6px;
+    min-width: 0;
+  }
+  .slide-kicker {
+    font-family: var(--mono);
+    font-size: clamp(0.5625rem, 0.9vw, 0.6875rem);
+    color: var(--text-3);
+  }
+  .slide-title {
+    font-size: clamp(0.9375rem, 1.7vw, 1.375rem);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    margin-bottom: 8px;
+  }
+  .gantt {
+    display: grid;
+    grid-template-columns: 38% repeat(5, 1fr);
+    row-gap: 7px;
+    align-items: center;
+    font-size: clamp(0.5625rem, 0.85vw, 0.75rem);
+  }
+  .gd {
+    font-family: var(--mono);
+    color: var(--text-3);
+    border-left: 1px solid var(--line);
+    padding-left: 4px;
+  }
+  .gt {
+    grid-column: 1;
+    color: var(--text-2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 6px;
+  }
+  .bar {
+    height: 10px;
+    border-radius: 3px;
+    background: #9aa5b8;
+  }
+  .bar.key {
+    background: var(--live);
+  }
+  .tiles {
+    display: grid;
+    grid-template-rows: 1fr 1fr;
+    gap: 12px;
+    min-height: 0;
+  }
+  .tile {
+    position: relative;
+    border-radius: 6px;
+    overflow: hidden;
+    min-height: 0;
+  }
+  .tile :global(svg) {
+    width: 100%;
+    height: 100%;
+  }
+  .tile-name {
+    position: absolute;
+    left: 6px;
+    bottom: 6px;
+    font-size: clamp(0.5625rem, 0.8vw, 0.6875rem);
+    background: rgb(21 24 31 / 0.75);
+    color: #fff;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+  .lower {
+    position: absolute;
+    left: 24px;
+    bottom: 24px;
+    display: grid;
+    background: var(--studio);
+    color: #fff;
+    padding: 8px 14px 8px 12px;
+    border-radius: 4px;
+    border-left: 3px solid var(--live);
+  }
+  .lower-name {
+    font-weight: 500;
+    font-size: clamp(0.75rem, 1.1vw, 0.9375rem);
+  }
+  .lower-role {
+    font-size: clamp(0.625rem, 0.9vw, 0.75rem);
+    color: #b9bfcb;
+  }
+  figcaption {
+    font-size: 0.75rem;
+  }
+  @media (max-width: 640px) {
+    .screen {
+      aspect-ratio: auto;
+      grid-template-columns: 1fr;
+      padding: 8px;
+    }
+    .slide {
+      padding: 16px 16px 20px;
+    }
+    .tiles,
+    .lower {
+      display: none;
+    }
+  }
+</style>
